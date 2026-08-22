@@ -1,0 +1,33 @@
+
+/* Midnight Violet
+   Primary accent #8B5CF6 on a #0a0a0f base. Text-on-chip roles use a lighter
+   tint of the same hue so they clear WCAG AA against the raised surface. */
+
+@define-color bg_color #0a0a0f;
+@define-color fg_color #e8e4f3;
+@define-color tray_color #17141f;
+@define-color accent_color #8B5CF6;
+@define-color highlight_color #a78bfa;
+@define-color invert_color #0a0a0f;
+@define-color caution_color #f2b544;
+@define-color urgent_color #ff6b81;
+@define-color middle_color #a78bfa;
+@define-color first_right_color #8B5CF6;
+@define-color middle_right_color #c4b5fd;
+@define-color last_right_color #a78bfa;
+@define-color funny_pastel_color #d8b4fe;
+
+/* Previous palette
+@define-color bg_color #1e1e20;
+@define-color fg_color #c59edc;
+@define-color tray_color #2a2a2c;
+@define-color accent_color #dcd9e7;
+@define-color highlight_color #c3fb5b;
+@define-color invert_color #2a2a2c;
+@define-color caution_color #ffb86c;
+@define-color urgent_color #ff6e79;
+@define-color middle_color #c59edc;
+@define-color first_right_color #c3fb5b;
+@define-color middle_right_color #ff6e79;
+@define-color last_right_color #c59edc;
+@define-color funny_pastel_color #c3fb5b; */

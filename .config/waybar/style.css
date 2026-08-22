@@ -29,14 +29,14 @@ window#waybar > box {
 }
 
 .niri-taskbar {
-    background: #2a2a2c;
+    background: alpha(@tray_color, 0.55);
     margin: 2px;
     padding: 0px;
     border-radius: 7px;
 }
 
 .niri-taskbar .workspace-label {
-    background: #2a2a2c;
+    background: alpha(@tray_color, 0.55);
     color: @fg_color;
     border-radius: 0;
     margin: 0;
@@ -47,12 +47,12 @@ window#waybar > box {
 }
 
 .niri-taskbar .workspace-label.focused {
-    background: #2a2a2c;
+    background: alpha(@tray_color, 0.55);
     color: @highlight_color;
 }
 
 .niri-taskbar button {
-    background: #2a2a2c;
+    background: alpha(@tray_color, 0.55);
     margin: 0;
     padding: 3px 5px;
     border-radius: 0;
@@ -103,8 +103,8 @@ window#waybar > box {
     color: @last_right_color;
 }
 #scratchpad {
-    background: #2a2a2c;
-    color: @invert_color;
+    background: alpha(@tray_color, 0.55);
+    color: @fg_color;
     margin: 0px 0px 2px 0px;
     padding: 0px 5px;
     border-radius: 0;
@@ -119,7 +119,7 @@ window#waybar > box {
     border-radius: 7px;
     margin: 2px;
     padding: 0px 5px;
-    background-color: #2a2a2c;
+    background-color: alpha(@tray_color, 0.55);
 }
 
 #battery,
@@ -133,7 +133,7 @@ window#waybar > box {
     border-radius: 7px;
     margin: 2px;
     padding: 0px 10px;
-    background-color: #2a2a2c;
+    background-color: alpha(@tray_color, 0.55);
 }
 
 #right-group #custom-cogicon,
@@ -185,7 +185,7 @@ window#waybar > box {
 
 #custom-center-info {
     color: @middle_color;
-    background-color: #2a2a2c;
+    background-color: alpha(@tray_color, 0.55);
 }
 
 #custom-weather {
@@ -214,12 +214,12 @@ window#waybar > box {
 }
 
 #privacy {
-    background-color: #2a2a2c;
+    background-color: alpha(@tray_color, 0.55);
     color: @caution_color;
 }
 
 #tray {
-    background-color: #2a2a2c;
+    background-color: alpha(@tray_color, 0.55);
 }
 
 #power-profiles-daemon.performance {
