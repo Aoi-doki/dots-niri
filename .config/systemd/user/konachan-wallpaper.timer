@@ -1,0 +1,10 @@
+[Unit]
+Description=Rotate Konachan wallpaper every 45 minutes
+
+[Timer]
+OnStartupSec=2min
+OnUnitActiveSec=45min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
