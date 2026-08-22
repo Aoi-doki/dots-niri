@@ -218,7 +218,8 @@ layer-rule {
 layer-rule {
     match namespace="waybar"
     background-effect {
-        blur false
+        blur true
+        xray false
     }
 }
 
@@ -253,6 +254,36 @@ layer-rule {
     match layer="background"
     exclude namespace="waybar"
     exclude namespace="bar-niri"
+    background-effect {
+        blur true
+    }
+}
+
+// ── Translucent chat/media apps ──────────────────────────────
+// Vesktop/Equibop render a transparent window themselves (see
+// ~/.config/vesktop/themes/translucent.theme.css); we only add the blur.
+window-rule {
+    match app-id=r#"^(vesktop|equibop)$"#
+    background-effect {
+        blur true
+        xray false
+    }
+}
+
+// Signal and Spotify paint opaque backgrounds and expose no theming API,
+// so compositor opacity is the only lever. This dims the whole window,
+// text included — that is the trade-off, not a bug.
+window-rule {
+    match app-id=r#"^(signal|Signal)$"#
+    opacity 0.92
+    background-effect {
+        blur true
+    }
+}
+
+window-rule {
+    match app-id=r#"^(spotify|Spotify)$"#
+    opacity 0.92
     background-effect {
         blur true
     }
@@ -403,8 +434,8 @@ binds {
     Mod+D hotkey-overlay-title="Open System Monitor" { spawn "kitty" "--class" "floating" "btop"; }
     Mod+V hotkey-overlay-title="Open Clipboard History" { spawn "rsclip" "show"; }
     Mod+Period hotkey-overlay-title="Open App Launcher" { spawn "fuzzel"; }
-    Mod+C hotkey-overlay-title="Open Project" { spawn "/home/radhey/.local/bin/project-picker"; }
-    Mod+Shift+C hotkey-overlay-title="Open Zed Project" { spawn "/home/radhey/.local/bin/project-picker" "zed"; }
+    Mod+C hotkey-overlay-title="Open Project" { spawn "/home/monika/.local/bin/project-picker"; }
+    Mod+Shift+C hotkey-overlay-title="Open Zed Project" { spawn "/home/monika/.local/bin/project-picker" "zed"; }
     Mod+Grave hotkey-overlay-title="Open AI Assistant" { spawn "t3code"; }
 
     Mod+Shift+Slash { show-hotkey-overlay; }
@@ -412,28 +443,28 @@ binds {
     Mod+Return hotkey-overlay-title="Open a Terminal" { spawn "kitty"; }
     Mod+W hotkey-overlay-title="Open a Web Browser" { spawn "zen-browser"; }
     // Keypad 1/2 are reported as KP_End/KP_Down when Num Lock is off.
-    Mod+KP_1 hotkey-overlay-title="Open ChatGPT" { spawn "/home/radhey/.config/scripts/browser-app" "https://chatgpt.com/"; }
-    Mod+KP_End hotkey-overlay-title="Open ChatGPT" { spawn "/home/radhey/.config/scripts/browser-app" "https://chatgpt.com/"; }
-    Mod+KP_2 hotkey-overlay-title="Open WhatsApp" { spawn "/home/radhey/.config/scripts/browser-app" "https://web.whatsapp.com/"; }
-    Mod+KP_Down hotkey-overlay-title="Open WhatsApp" { spawn "/home/radhey/.config/scripts/browser-app" "https://web.whatsapp.com/"; }
+    Mod+KP_1 hotkey-overlay-title="Open ChatGPT" { spawn "/home/monika/.config/scripts/browser-app" "https://chatgpt.com/"; }
+    Mod+KP_End hotkey-overlay-title="Open ChatGPT" { spawn "/home/monika/.config/scripts/browser-app" "https://chatgpt.com/"; }
+    Mod+KP_2 hotkey-overlay-title="Open WhatsApp" { spawn "/home/monika/.config/scripts/browser-app" "https://web.whatsapp.com/"; }
+    Mod+KP_Down hotkey-overlay-title="Open WhatsApp" { spawn "/home/monika/.config/scripts/browser-app" "https://web.whatsapp.com/"; }
     Mod+E hotkey-overlay-title="Open a File Manager" { spawn "nautilus"; }
     Mod+M hotkey-overlay-title="Open Cider" { spawn "cider"; }
-    Mod+X hotkey-overlay-title="Open the Power Menu" { spawn "/home/radhey/.config/scripts/wlogout.sh"; }
+    Mod+X hotkey-overlay-title="Open the Power Menu" { spawn "/home/monika/.config/scripts/wlogout.sh"; }
     Mod+I hotkey-overlay-title="Install a program" {spawn "kitty" "--class" "floating" ".config/scripts/install.sh"; }
     Mod+O hotkey-overlay-title="Install a program (aur)"{spawn "kitty" "--class" "floating" ".config/scripts/install-aur.sh"; }
     Mod+U hotkey-overlay-title="Uninstall a program "{spawn "kitty" "--class" "floating" ".config/scripts/uninstall.sh"; }
     Mod+P hotkey-overlay-title="Port Manager" {spawn "kitty" "--class" "port" ".config/scripts/port-manager.sh";}
     Mod+L hotkey-overlay-title="Lock Desktop" { spawn "swaylock"; }
     Mod+Z hotkey-overlay-title="Toggle Waybar" { spawn "pkill" "-SIGUSR1" "waybar"; }
-    Mod+Space hotkey-overlay-title="Transcribe Audio" { spawn "sh" "/home/radhey/.config/scripts/whisper-transcribe.sh"; }
-    Alt+Space hotkey-overlay-title="Cloud Transcribe" { spawn "sh" "/home/radhey/.config/scripts/whisper-cloud.sh"; }
+    Mod+Space hotkey-overlay-title="Transcribe Audio" { spawn "sh" "/home/monika/.config/scripts/whisper-transcribe.sh"; }
+    Alt+Space hotkey-overlay-title="Cloud Transcribe" { spawn "sh" "/home/monika/.config/scripts/whisper-cloud.sh"; }
 
-    XF86AudioRaiseVolume  allow-when-locked=true { spawn "/home/radhey/.config/scripts/volume-notify.sh" "up"; }
-    XF86AudioLowerVolume  allow-when-locked=true { spawn "/home/radhey/.config/scripts/volume-notify.sh" "down"; }
-    XF86AudioMute         allow-when-locked=true { spawn "/home/radhey/.config/scripts/volume-notify.sh" "mute"; }
-    XF86AudioMicMute      allow-when-locked=true { spawn "/home/radhey/.config/scripts/volume-notify.sh" "mic-mute"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "/home/radhey/.config/scripts/brightness-notify.sh" "down"; }
-    XF86MonBrightnessUp   allow-when-locked=true { spawn "/home/radhey/.config/scripts/brightness-notify.sh" "up"; }
+    XF86AudioRaiseVolume  allow-when-locked=true { spawn "/home/monika/.config/scripts/volume-notify.sh" "up"; }
+    XF86AudioLowerVolume  allow-when-locked=true { spawn "/home/monika/.config/scripts/volume-notify.sh" "down"; }
+    XF86AudioMute         allow-when-locked=true { spawn "/home/monika/.config/scripts/volume-notify.sh" "mute"; }
+    XF86AudioMicMute      allow-when-locked=true { spawn "/home/monika/.config/scripts/volume-notify.sh" "mic-mute"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "/home/monika/.config/scripts/brightness-notify.sh" "down"; }
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "/home/monika/.config/scripts/brightness-notify.sh" "up"; }
 
     Mod+Tab repeat=false { toggle-overview; }
 
@@ -478,8 +509,8 @@ binds {
     Mod+Shift+Page_Up   { move-workspace-up; }
     Mod+Shift+U         { move-workspace-down; }
     Mod+Shift+I         { move-workspace-up; }
-    Shift+Page_Down { spawn "sh" "-c" "/home/radhey/.config/scripts/scale-adjust.sh -0.05"; }
-    Shift+Page_Up   { spawn "sh" "-c" "/home/radhey/.config/scripts/scale-adjust.sh +0.05"; }
+    Shift+Page_Down { spawn "sh" "-c" "/home/monika/.config/scripts/scale-adjust.sh -0.05"; }
+    Shift+Page_Up   { spawn "sh" "-c" "/home/monika/.config/scripts/scale-adjust.sh +0.05"; }
 
     Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
     Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }
