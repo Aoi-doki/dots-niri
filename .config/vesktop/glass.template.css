@@ -1,0 +1,274 @@
+/**
+ * @name Glass
+ * @description Frosted-glass Discord, recoloured from the current wallpaper.
+ * @author dots-niri / theme-from-wallpaper
+ *
+ * GENERATED FILE — do not edit by hand.
+ * Template: ~/.config/vesktop/glass.template.css
+ * Rendered by: ~/.local/bin/theme-from-wallpaper
+ * Source wallpaper: {{WALLPAPER}}
+ *
+ * Needs Vesktop's transparent window (settings.json "transparent": true) and a
+ * FULL restart of Vesktop — Electron fixes transparency at window creation.
+ * niri blurs behind the window; backdrop-filter below adds the internal
+ * layering so panels read as separate sheets of glass.
+ */
+
+:root {
+  --g-accent:      {{ACCENT}};
+  --g-accent-soft: {{ACCENT_SOFT}};
+  --g-accent-dim:  {{ACCENT_DIM}};
+  --g-base:        {{BASE}};
+  --g-surface:     {{SURFACE}};
+
+  --g-text:        {{TEXT}};
+  --g-text-muted:  {{TEXT_MUTED}};
+
+  /* Three depths of glass: shell, panel, raised. */
+  --g-1: {{GLASS_1}};
+  --g-2: {{GLASS_2}};
+  --g-3: {{GLASS_3}};
+
+  --g-border: {{BORDER}};
+  --g-glow:   {{GLOW}};
+
+  --g-blur: blur(22px) saturate(140%);
+}
+
+/* ── Discord tokens ─────────────────────────────────────────── */
+:root {
+  --brand-experiment:     var(--g-accent) !important;
+  --brand-experiment-500: var(--g-accent) !important;
+  --brand-experiment-560: var(--g-accent-dim) !important;
+  --brand-500:            var(--g-accent) !important;
+  --brand-560:            var(--g-accent-dim) !important;
+
+  --background-primary:        transparent !important;
+  --background-secondary:      transparent !important;
+  --background-secondary-alt:  transparent !important;
+  --background-tertiary:       transparent !important;
+  --background-accent:         var(--g-accent) !important;
+  --background-floating:       var(--g-3) !important;
+  --background-mobile-primary: transparent !important;
+  --background-message-hover:  var(--g-glow) !important;
+  --background-modifier-hover:    var(--g-glow) !important;
+  --background-modifier-selected: var(--g-glow) !important;
+  --channeltextarea-background:   var(--g-2) !important;
+
+  --bg-base-primary:    transparent !important;
+  --bg-base-secondary:  transparent !important;
+  --bg-base-tertiary:   transparent !important;
+  --bg-surface-raised:  var(--g-2) !important;
+  --bg-surface-overlay: var(--g-3) !important;
+  --bg-surface-higher:  var(--g-3) !important;
+  --bg-mod-subtle:      var(--g-glow) !important;
+
+  /* 2025 redesign token family — this is the one that paints the opaque
+     app background if left alone. */
+  --background-base-lowest:  transparent !important;
+  --background-base-lower:   transparent !important;
+  --background-base-low:     transparent !important;
+  --background-base-normal:  transparent !important;
+  --background-base-high:    var(--g-2) !important;
+  --background-base-higher:  var(--g-2) !important;
+  --background-base-highest: var(--g-3) !important;
+
+  --background-surface-low:     transparent !important;
+  --background-surface-normal:  var(--g-2) !important;
+  --background-surface-high:    var(--g-2) !important;
+  --background-surface-higher:  var(--g-3) !important;
+  --background-surface-highest: var(--g-3) !important;
+
+  --bg-base-primary-alt: transparent !important;
+  --bg-overlay-chat:     transparent !important;
+  --bg-overlay-app-frame: transparent !important;
+  --app-frame-background: transparent !important;
+  --page-background:      transparent !important;
+
+  --header-primary:   var(--g-text) !important;
+  --header-secondary: var(--g-accent-soft) !important;
+  --text-normal:      var(--g-text) !important;
+  --text-default:     var(--g-text) !important;
+  --text-muted:       var(--g-text-muted) !important;
+  --text-link:        var(--g-accent-soft) !important;
+
+  --interactive-normal: var(--g-text-muted) !important;
+  --interactive-hover:  var(--g-text) !important;
+  --interactive-active: var(--g-text) !important;
+
+  --scrollbar-thin-thumb:  var(--g-accent-dim) !important;
+  --scrollbar-auto-thumb:  var(--g-accent-dim) !important;
+  --scrollbar-auto-track:  transparent !important;
+  --scrollbar-thin-track:  transparent !important;
+
+  --elevation-low:    none !important;
+  --elevation-high:   none !important;
+  --elevation-stroke: none !important;
+}
+
+/* ── Shell: fully transparent so the compositor blur shows ──── */
+html, body, #app-mount,
+[class*="appFrame"], [class*="bg_"],
+[class*="baseLayer_"], [class*="bgOverlay"],
+[class*="appMount_"],
+[class*="app_"],
+[class*="appAsidePanelWrapper_"],
+[class*="notAppAsidePanel_"],
+[class*="appDevToolsWrapper_"],
+[class*="layers_"], [class*="layer_"],
+[class*="container_"] > [class*="base_"],
+[class*="content_"],
+[class*="chatContent_"],
+[class*="messagesWrapper_"],
+[class*="scroller_"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ── Glass panels ───────────────────────────────────────────── */
+[class*="guilds_"],
+[class*="sidebar_"],
+[class*="membersWrap_"],
+[class*="privateChannels_"],
+[class*="peopleColumn_"],
+[class*="searchResultsWrap_"] {
+  background: var(--g-1) !important;
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  border-right: 1px solid var(--g-border) !important;
+  border-left: none !important;
+}
+
+[class*="membersWrap_"],
+[class*="searchResultsWrap_"] {
+  border-left: 1px solid var(--g-border) !important;
+  border-right: none !important;
+}
+
+/* Top bar / channel header */
+[class*="title_"][class*="container_"],
+[class*="upperContainer_"],
+[class*="toolbar_"] {
+  background: var(--g-1) !important;
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  border-bottom: 1px solid var(--g-border) !important;
+}
+
+/* User panel (bottom-left) */
+[class*="panels_"] {
+  background: var(--g-2) !important;
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  border-top: 1px solid var(--g-border) !important;
+}
+
+/* ── Message input ──────────────────────────────────────────── */
+[class*="channelTextArea_"] [class*="scrollableContainer_"],
+[class*="channelTextArea_"] form {
+  background: var(--g-2) !important;
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  border: 1px solid var(--g-border) !important;
+  border-radius: 14px !important;
+}
+
+/* ── Popouts, modals, menus: denser glass or they're unreadable */
+[class*="menu_"],
+[class*="messagesPopoutWrap_"],
+[class*="popout_"],
+[class*="modal_"],
+[class*="root_"][class*="fullscreenOnMobile_"],
+[class*="autocomplete_"],
+[class*="tooltip_"],
+[class*="layer_"] > [class*="focusLock_"] {
+  background: var(--g-3) !important;
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  border: 1px solid var(--g-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Modal dimmer shouldn't be a flat black slab */
+[class*="backdrop_"] {
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ── Settings ───────────────────────────────────────────────── */
+[class*="standardSidebarView_"],
+[class*="contentColumn_"],
+[class*="sidebarRegion_"] {
+  background: transparent !important;
+}
+[class*="standardSidebarView_"] {
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+  background: var(--g-1) !important;
+}
+
+/* ── Accents and interaction ────────────────────────────────── */
+[class*="selected_"] [class*="link_"],
+[class*="modeSelected_"] {
+  background: var(--g-glow) !important;
+  box-shadow: inset 2px 0 0 var(--g-accent) !important;
+}
+
+[class*="wrapper_"]:hover [class*="link_"],
+[class*="message_"]:hover {
+  background: var(--g-glow) !important;
+}
+
+[class*="button_"][class*="lookFilled_"][class*="colorBrand_"] {
+  background: var(--g-accent) !important;
+  border-radius: 10px !important;
+}
+[class*="button_"][class*="lookFilled_"][class*="colorBrand_"]:hover {
+  background: var(--g-accent-soft) !important;
+}
+
+/* Unread / mention pills */
+[class*="unread_"], [class*="numberBadge_"], [class*="mentionsBadge_"] {
+  background-color: var(--g-accent) !important;
+}
+
+/* Avatars and cards get a soft edge so they read against glass */
+[class*="avatar_"] img,
+[class*="embedFull_"],
+[class*="embed_"] {
+  border-radius: 12px;
+}
+[class*="embedFull_"], [class*="embed_"] {
+  background: var(--g-2) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-left-color: var(--g-accent) !important;
+}
+
+/* Code blocks */
+code, pre, [class*="hljs"] {
+  background: var(--g-2) !important;
+  border: 1px solid var(--g-border) !important;
+  border-radius: 10px !important;
+}
+
+/* Keep text legible over a busy wallpaper */
+[class*="markup_"],
+[class*="username_"],
+[class*="name_"] {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent !important; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--g-accent-dim) !important;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner { background: transparent !important; }
