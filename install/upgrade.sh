@@ -52,10 +52,28 @@ update_symlinks() {
 	mkdir -p "$USER_HOME/.config" "$USER_HOME/.config/autostart" "$USER_HOME/.local/share" "$USER_HOME/bin"
 
 	if [[ -d "$REPO_DIR/.config" ]]; then
+		# See install.sh: these are owned by end-4/dots-hyprland when both
+		# rices are installed. Relinking them would let its rsync --delete
+		# write into this repo, and would move the live configs to .bak.
+		local SKIP_LINK=(
+			dolphinrc fish fontconfig fuzzel gtk-3.0 gtk-4.0
+			kdeglobals kded6rc kitty Kvantum qt5ct qt6ct wlogout
+		)
+
 		for d in "$REPO_DIR/.config"/*; do
 			[[ -e "$d" ]] || continue
 			local name
 			name=$(basename "$d")
+
+			local skip=""
+			for s in "${SKIP_LINK[@]}"; do
+				[[ "$name" == "$s" ]] && skip=1 && break
+			done
+			if [[ -n "$skip" ]]; then
+				msg "Skipping $name (managed by end-4/dots-hyprland)"
+				continue
+			fi
+
 			local target="$USER_HOME/.config/$name"
 
 			if [[ -L "$target" && "$(readlink -f "$target")" == "$(readlink -f "$d")" ]]; then

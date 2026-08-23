@@ -923,11 +923,30 @@ link_dotfiles() {
 	msg "Linking dotfiles into $USER_HOME"
 	mkdir -p "$USER_HOME/.config" "$USER_HOME/.config/autostart" "$USER_HOME/.local/share" "$USER_HOME/bin"
 
+	# Configs owned by end-4/dots-hyprland when it is installed alongside niri.
+	# Its installer rsyncs with --delete into ~/.config/<name>, so symlinking
+	# these would let it delete files inside this repo. They are kept here for
+	# reference/restore but are no longer deployed automatically.
+	local SKIP_LINK=(
+		dolphinrc fish fontconfig fuzzel gtk-3.0 gtk-4.0
+		kdeglobals kded6rc kitty Kvantum qt5ct qt6ct wlogout
+	)
+
 	if [[ -d "$REPO_DIR/.config" ]]; then
 		for d in "$REPO_DIR/.config"/*; do
 			[[ -e "$d" ]] || continue
 			local name
 			name=$(basename "$d")
+
+			local skip=""
+			for s in "${SKIP_LINK[@]}"; do
+				[[ "$name" == "$s" ]] && skip=1 && break
+			done
+			if [[ -n "$skip" ]]; then
+				warn "Skipping $name (managed by end-4/dots-hyprland; see hyprland/README.md)"
+				continue
+			fi
+
 			local target="$USER_HOME/.config/$name"
 
 			if [[ -L "$target" || -d "$target" || -f "$target" ]]; then
