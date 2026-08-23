@@ -274,12 +274,12 @@ def main():
             # Frosted, not clear: the panels must read as milky glass, so the
             # alpha stays high and the compositor blur supplies the diffusion.
             # Below roughly 0.65 it looks like plain transparency instead.
-            "{{GLASS_1}}":     rgba(base, 0.74),
-            "{{GLASS_2}}":     rgba(surface, 0.66),
-            "{{GLASS_3}}":     rgba(base, 0.90),
-            "{{BORDER}}":      rgba(accent, 0.28),
-            "{{GLASS_CHAT}}":  rgba(base, 0.58),
-            "{{FROST}}":       "rgba(255, 255, 255, 0.045)",
+            "{{GLASS_1}}":     rgba(base, 0.62),
+            "{{GLASS_2}}":     rgba(surface, 0.54),
+            "{{GLASS_3}}":     rgba(base, 0.86),
+            "{{BORDER}}":      rgba(accent, 0.26),
+            "{{GLASS_CHAT}}":  rgba(base, 0.44),
+            "{{FROST}}":       "rgba(255, 255, 255, 0.026)",
             "{{GLOW}}":        rgba(accent, 0.14),
         }
         css = VESKTOP_TEMPLATE.read_text()
