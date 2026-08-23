@@ -30,9 +30,13 @@
   --g-3: {{GLASS_3}};
 
   --g-border: {{BORDER}};
+  --g-frost:  {{FROST}};
+  --g-chat:   {{GLASS_CHAT}};
   --g-glow:   {{GLOW}};
 
-  --g-blur: blur(22px) saturate(140%);
+  /* Heavier diffusion; the light film (--g-frost) is what makes it read as
+     frosted glass rather than simply a tinted transparent panel. */
+  --g-blur: blur(34px) saturate(150%) brightness(1.06);
 }
 
 /* ── Discord tokens ─────────────────────────────────────────── */
@@ -118,8 +122,6 @@ html, body, #app-mount,
 [class*="layers_"], [class*="layer_"],
 [class*="container_"] > [class*="base_"],
 [class*="content_"],
-[class*="chatContent_"],
-[class*="messagesWrapper_"],
 [class*="scroller_"] {
   background: transparent !important;
   background-color: transparent !important;
@@ -133,7 +135,9 @@ html, body, #app-mount,
 [class*="privateChannels_"],
 [class*="peopleColumn_"],
 [class*="searchResultsWrap_"] {
-  background: var(--g-1) !important;
+  background:
+    linear-gradient(var(--g-frost), var(--g-frost)),
+    var(--g-1) !important;
   backdrop-filter: var(--g-blur);
   -webkit-backdrop-filter: var(--g-blur);
   border-right: 1px solid var(--g-border) !important;
@@ -158,7 +162,9 @@ html, body, #app-mount,
 
 /* User panel (bottom-left) */
 [class*="panels_"] {
-  background: var(--g-2) !important;
+  background:
+    linear-gradient(var(--g-frost), var(--g-frost)),
+    var(--g-2) !important;
   backdrop-filter: var(--g-blur);
   -webkit-backdrop-filter: var(--g-blur);
   border-top: 1px solid var(--g-border) !important;
@@ -189,6 +195,27 @@ html, body, #app-mount,
   border: 1px solid var(--g-border) !important;
   border-radius: 16px !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* The message area gets its own, lighter sheet -- left fully transparent it
+   shows raw blurred wallpaper and stops reading as glass at all. */
+[class*="chatContent_"],
+[class*="messagesWrapper_"] {
+  background:
+    linear-gradient(var(--g-frost), var(--g-frost)),
+    var(--g-chat) !important;
+  backdrop-filter: var(--g-blur);
+  -webkit-backdrop-filter: var(--g-blur);
+}
+
+/* Light catching the top edge of each glass sheet */
+[class*="guilds_"],
+[class*="sidebar_"],
+[class*="membersWrap_"],
+[class*="panels_"],
+[class*="menu_"],
+[class*="modal_"] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Modal dimmer shouldn't be a flat black slab */

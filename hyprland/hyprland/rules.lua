@@ -6,6 +6,10 @@ hl.window_rule({match = {class = "^()$", title = "^()$" },                   no_
 -- Disable blur for every window
 hl.window_rule({match = {class = ".*" }, no_blur = true })
 
+-- ...but re-enable it for the translucent chat clients, otherwise the glass
+-- theme is plain see-through rather than frosted. Later rules win.
+hl.window_rule({match = {class = "^(vesktop|equibop)$" },                    no_blur = false })
+
 -- Floating
 hl.window_rule({match = {title = "^(Open File)(.*)$" },                      center = true})
 hl.window_rule({match = {title = "^(Open File)(.*)$" },                      float = true})
