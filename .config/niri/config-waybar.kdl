@@ -301,11 +301,11 @@ window-rule {
 }
 window-rule {
     // A settings panel should not tile into the scrolling layout.
+    // NOTE: do not set default-column-width / default-window-height here --
+    // those are tiling properties and leave the floating window unrendered.
     match app-id="dev.monika.WallpaperSettings"
     open-floating true
-    default-column-width { fixed 560; }
-    default-window-height { fixed 720; }
-    open-focused true
+    default-floating-position x=560 y=180 relative-to="top-left"
 }
 
 window-rule {
