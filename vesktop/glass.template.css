@@ -39,6 +39,43 @@
   --g-blur: blur(34px) saturate(150%) brightness(1.06);
 }
 
+/* ── Typography ─────────────────────────────────────────────
+   Static, not wallpaper-derived, so it lives in the template rather than
+   being substituted. Maple Mono has no Nerd Font patch, but Discord draws
+   its icons as SVG, so only emoji need a fallback. */
+:root {
+  --font-primary:  "Maple Mono", "JetBrainsMono Nerd Font", "Noto Color Emoji", monospace !important;
+  --font-display:  "Maple Mono", "JetBrainsMono Nerd Font", "Noto Color Emoji", monospace !important;
+  --font-headline: "Maple Mono", "JetBrainsMono Nerd Font", "Noto Color Emoji", monospace !important;
+  --font-code:     "Maple Mono", "JetBrainsMono Nerd Font", monospace !important;
+}
+
+body,
+button, input, textarea, select,
+[class*="markup_"],
+[class*="username_"],
+[class*="name_"],
+[class*="title_"],
+[class*="header_"],
+[class*="text_"],
+[class*="channelName_"],
+[class*="nameAndDecorators_"],
+[class*="listItem_"],
+[class*="placeholder_"],
+[class*="slateTextArea_"],
+[class*="chatContent_"] {
+  font-family: var(--font-primary) !important;
+}
+
+code, pre, [class*="hljs"], [class*="inlineCode"] {
+  font-family: var(--font-code) !important;
+}
+
+/* Maple sits a little tight at Discord's default metrics. */
+[class*="markup_"] {
+  line-height: 1.42;
+}
+
 /* ── Discord tokens ─────────────────────────────────────────── */
 :root {
   --brand-experiment:     var(--g-accent) !important;
