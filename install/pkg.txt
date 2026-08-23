@@ -95,5 +95,6 @@ lxappearance
 ttf-material-icons-git
 libgee
 cmake
-yala
+ly
 mpvpaper
+tailscale
