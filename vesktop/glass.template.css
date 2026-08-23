@@ -44,9 +44,14 @@
    being substituted. Maple Mono has no Nerd Font patch, but Discord draws
    its icons as SVG, so only emoji need a fallback. */
 :root {
-  --font-primary:  "Maple Mono", "JetBrainsMono Nerd Font", "Noto Color Emoji", monospace !important;
-  --font-display:  "Maple Mono", "JetBrainsMono Nerd Font", "Noto Color Emoji", monospace !important;
-  --font-headline: "Maple Mono", "JetBrainsMono Nerd Font", "Noto Color Emoji", monospace !important;
+  /* Proportional and JP-covering; Discord renders plenty of Japanese.
+     Code stays monospace. */
+  /* Quicksand is the distinctly round, geometric face; Rounded Mplus 1c sits
+     behind it purely to cover Japanese, which Quicksand lacks. Rounded Mplus
+     alone reads too close to Discord's stock sans to look like a change. */
+  --font-primary:  "Quicksand", "Rounded Mplus 1c", "Noto Color Emoji", sans-serif !important;
+  --font-display:  "Quicksand", "Rounded Mplus 1c", "Noto Color Emoji", sans-serif !important;
+  --font-headline: "Quicksand", "Rounded Mplus 1c", "Noto Color Emoji", sans-serif !important;
   --font-code:     "Maple Mono", "JetBrainsMono Nerd Font", monospace !important;
 }
 
@@ -67,13 +72,70 @@ button, input, textarea, select,
   font-family: var(--font-primary) !important;
 }
 
+/* Quicksand's DEFAULT variable instance is weight 300 (Light), so anything
+   not explicitly weighted renders thin. Raise the floor on Discord's own
+   weight classes rather than flattening everything to one weight, so the
+   visual hierarchy survives. */
+[class*="weightLight"]      { font-weight: 500 !important; }
+[class*="weightRegular"],
+[class*="weightNormal"]     { font-weight: 600 !important; }
+[class*="weightMedium"]     { font-weight: 600 !important; }
+[class*="weightSemiBold"]   { font-weight: 700 !important; }
+[class*="weightBold"]       { font-weight: 700 !important; }
+
+/* Current Discord builds name these "text-sm/medium", "text-md/semibold"
+   etc., so the older weight* classes above never match on their own. */
+[class*="/light"]           { font-weight: 500 !important; }
+[class*="/normal"]          { font-weight: 600 !important; }
+[class*="/medium"]          { font-weight: 600 !important; }
+[class*="/semibold"]        { font-weight: 700 !important; }
+[class*="/bold"]            { font-weight: 700 !important; }
+[class*="/extrabold"]       { font-weight: 700 !important; }
+
+body, button, input, textarea, select,
+[class*="markup_"],
+[class*="text_"],
+[class*="listItem_"],
+[class*="placeholder_"] {
+  font-weight: 600 !important;
+}
+
+[class*="username_"],
+[class*="name_"],
+[class*="channelName_"],
+[class*="title_"],
+[class*="header_"],
+[class*="nameAndDecorators_"] {
+  font-weight: 700 !important;
+}
+
 code, pre, [class*="hljs"], [class*="inlineCode"] {
   font-family: var(--font-code) !important;
 }
 
-/* Maple sits a little tight at Discord's default metrics. */
+/* Rounded Mplus 1c carries tall JP ascenders/descenders, so Discord's
+   fixed-height rows clip it. Give the text room and stop the containers
+   cropping their overflow. */
 [class*="markup_"] {
-  line-height: 1.42;
+  line-height: 1.5;
+}
+
+[class*="username_"],
+[class*="name_"],
+[class*="channelName_"],
+[class*="listItem_"],
+[class*="nameAndDecorators_"],
+[class*="title_"],
+[class*="header_"] {
+  line-height: 1.45 !important;
+  overflow: visible !important;
+}
+
+/* Rows that Discord sizes in fixed px need to grow with the taller face. */
+[class*="channelName_"],
+[class*="listItem_"] {
+  height: auto !important;
+  min-height: 0 !important;
 }
 
 /* ── Discord tokens ─────────────────────────────────────────── */
