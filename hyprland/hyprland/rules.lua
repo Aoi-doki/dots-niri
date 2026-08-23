@@ -10,6 +10,11 @@ hl.window_rule({match = {class = ".*" }, no_blur = true })
 -- theme is plain see-through rather than frosted. Later rules win.
 hl.window_rule({match = {class = "^(vesktop|equibop)$" },                    no_blur = false })
 
+-- Wallpaper settings panel: float, do not tile
+hl.window_rule({match = {class = "^(dev.monika.WallpaperSettings)$" },        float = true})
+hl.window_rule({match = {class = "^(dev.monika.WallpaperSettings)$" },        size = "560 720"})
+hl.window_rule({match = {class = "^(dev.monika.WallpaperSettings)$" },        center = true})
+
 -- Floating
 hl.window_rule({match = {title = "^(Open File)(.*)$" },                      center = true})
 hl.window_rule({match = {title = "^(Open File)(.*)$" },                      float = true})

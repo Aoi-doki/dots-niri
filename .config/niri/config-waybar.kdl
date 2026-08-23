@@ -300,6 +300,15 @@ window-rule {
     clip-to-geometry true
 }
 window-rule {
+    // A settings panel should not tile into the scrolling layout.
+    match app-id="dev.monika.WallpaperSettings"
+    open-floating true
+    default-column-width { fixed 560; }
+    default-window-height { fixed 720; }
+    open-focused true
+}
+
+window-rule {
     match app-id="project-picker"
     open-floating true
     min-width 500
