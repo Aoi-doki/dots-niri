@@ -19,6 +19,7 @@ TARGET = HOME / ".config/themes/global-colors.css"
 STATIC = HOME / ".config/themes/global-colors.static.css"
 MATUGEN_JSON = HOME / ".local/state/quickshell/user/generated/colors.json"
 MATUGEN_CONF = HOME / ".config/matugen/config.toml"
+II_CONFIG = HOME / ".config/illogical-impulse/config.json"
 VESKTOP_TEMPLATE = HOME / ".config/vesktop/glass.template.css"
 VESKTOP_THEME = HOME / ".config/vesktop/themes/glass.theme.css"
 ENABLED_FLAG = HOME / ".local/state/dots-niri/theme-follows-wallpaper"
@@ -280,6 +281,21 @@ def main():
         for k, v in subs.items():
             css = css.replace(k, v)
         VESKTOP_THEME.write_text(css)
+
+    # end-4's QuickShell restores background.wallpaperPath at startup, so
+    # without this it resets to its packaged default on every Hyprland login
+    # and discards whatever the rotation last set.
+    if II_CONFIG.exists():
+        try:
+            import json
+            cfg = json.loads(II_CONFIG.read_text())
+            if cfg.get("background", {}).get("wallpaperPath") != str(image):
+                cfg.setdefault("background", {})["wallpaperPath"] = str(image)
+                tmp = II_CONFIG.with_suffix(".json.tmp")
+                tmp.write_text(json.dumps(cfg, indent=4))
+                tmp.replace(II_CONFIG)
+        except Exception as exc:
+            print(f"could not persist wallpaperPath: {exc}", file=sys.stderr)
 
     print(f"themed from {image.name} via {source}")
     return 0
