@@ -1,0 +1,289 @@
+#!/usr/bin/env python3
+"""Derive the waybar palette from the current wallpaper, with guaranteed contrast.
+
+wallust picks the colors; this script arranges them into the roles waybar's
+global-colors.css expects, forcing every text role to clear WCAG AA against the
+surface it actually sits on. Naively mapping wallust slots produces unreadable
+bars, which is why this exists.
+"""
+
+import colorsys
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+STATE_FILE = HOME / ".local/state/quickshell/user/generated/wallpaper/path.txt"
+TARGET = HOME / ".config/themes/global-colors.css"
+STATIC = HOME / ".config/themes/global-colors.static.css"
+MATUGEN_JSON = HOME / ".local/state/quickshell/user/generated/colors.json"
+MATUGEN_CONF = HOME / ".config/matugen/config.toml"
+VESKTOP_TEMPLATE = HOME / ".config/vesktop/glass.template.css"
+VESKTOP_THEME = HOME / ".config/vesktop/themes/glass.theme.css"
+ENABLED_FLAG = HOME / ".local/state/dots-niri/theme-follows-wallpaper"
+
+AA = 4.5          # minimum contrast for normal text
+AA_STRONG = 6.0   # for the highlight role
+
+
+# --- colour helpers --------------------------------------------------------
+def hex_to_rgb(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def rgb_to_hex(rgb):
+    return "#" + "".join(f"{round(max(0, min(1, c)) * 255):02X}" for c in rgb)
+
+
+def luminance(rgb):
+    f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (f(c) for c in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast(a, b):
+    la, lb = luminance(a), luminance(b)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def hsl(h, s, l):
+    r, g, b = colorsys.hls_to_rgb(h, l, s)
+    return (r, g, b)
+
+
+def lift(rgb, surface, target):
+    """Lighten a colour until it clears `target` contrast against `surface`."""
+    h, l, s = colorsys.rgb_to_hls(*rgb)
+    best = rgb
+    for step in range(0, 101):
+        cand = colorsys.hls_to_rgb(h, min(1.0, l + step / 100), s)
+        best = cand
+        if contrast(cand, surface) >= target:
+            break
+    return best
+
+
+def shade(rgb, delta):
+    """Shift a colour's lightness by delta (-1..1), keeping hue/saturation."""
+    h, l, sat = colorsys.rgb_to_hls(*rgb)
+    return colorsys.hls_to_rgb(h, max(0.0, min(1.0, l + delta)), sat)
+
+
+def chroma(rgb):
+    h, l, s = colorsys.rgb_to_hls(*rgb)
+    # favour saturated, mid-lightness colours
+    return s * (1 - abs(l - 0.5) * 1.2)
+
+
+# --- palette ---------------------------------------------------------------
+def wallust_scheme(image):
+    out = subprocess.run(
+        ["wallust", "run", "-q", "-s", "--print-scheme", str(image)],
+        capture_output=True, text=True, timeout=120,
+    )
+    cols = [l.strip() for l in out.stdout.splitlines() if l.strip().startswith("#")]
+    if len(cols) < 16:
+        raise RuntimeError(f"wallust returned {len(cols)} colors")
+    return [hex_to_rgb(c) for c in cols]
+
+
+def run_matugen(image):
+    """Regenerate end-4's Material You colours. Must run before build() so the
+    waybar/Vesktop palette can be derived from the same source."""
+    if not (shutil.which("matugen") and MATUGEN_CONF.exists()):
+        return False
+    # matugen 4.x will not choose between multiple source colours without a
+    # terminal, so --prefer is mandatory from a timer.
+    r = subprocess.run(
+        ["matugen", "image", str(image), "--prefer", "saturation",
+         "--mode", "dark", "--quiet"],
+        check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return r.returncode == 0
+
+
+def build_from_matugen():
+    """Map Material You roles onto the waybar palette.
+
+    Preferred over the wallust path: end-4's GTK/Qt/QuickShell theming is all
+    matugen, so deriving the bar from a second algorithm makes the bar and the
+    apps disagree on the same wallpaper.
+    """
+    import json
+    m = json.loads(MATUGEN_JSON.read_text())
+    need = ("background", "surface_container", "on_surface", "primary",
+            "tertiary", "error", "secondary")
+    if not all(k in m for k in need):
+        raise KeyError("matugen json missing expected roles")
+
+    bg = hex_to_rgb(m["background"])
+    chip = hex_to_rgb(m["surface_container"])
+    fg = hex_to_rgb(m["on_surface"])
+    accent = lift(hex_to_rgb(m["primary"]), chip, AA)
+    tertiary = lift(hex_to_rgb(m["tertiary"]), chip, AA)
+    secondary = lift(hex_to_rgb(m["secondary"]), chip, AA)
+    urgent = lift(hex_to_rgb(m["error"]), chip, AA)
+    caution = lift(hsl(0.11, 0.85, 0.55), chip, AA)
+
+    return {
+        "bg_color": bg,
+        "fg_color": fg,
+        "tray_color": chip,
+        "accent_color": accent,
+        "highlight_color": shade(accent, 0.10),
+        "invert_color": bg,
+        "caution_color": caution,
+        "urgent_color": urgent,
+        "middle_color": tertiary,
+        "first_right_color": accent,
+        "middle_right_color": secondary,
+        "last_right_color": tertiary,
+        "funny_pastel_color": tertiary,
+    }
+
+
+def build(image):
+    cols = wallust_scheme(image)
+
+    # Most vivid colour drives the accent hue.
+    accent_src = max(cols[1:7], key=chroma)
+    hue = colorsys.rgb_to_hls(*accent_src)[0]
+
+    # Surfaces: very dark, faintly tinted by the wallpaper's dominant hue.
+    bg = hsl(hue, 0.32, 0.045)
+    chip = hsl(hue, 0.22, 0.105)
+    fg = hsl(hue, 0.16, 0.93)
+
+    accent = lift(accent_src, chip, AA)
+    highlight = lift(accent_src, chip, AA_STRONG)
+
+    def warm(lo, hi, fallback):
+        cands = [c for c in cols[1:]
+                 if lo <= colorsys.rgb_to_hls(*c)[0] <= hi]
+        return lift(max(cands, key=chroma) if cands else fallback, chip, AA)
+
+    caution = warm(0.08, 0.19, hsl(0.12, 0.85, 0.55))   # amber band
+    urgent = warm(0.95, 1.0, hsl(0.98, 0.80, 0.62))     # red band
+    if contrast(urgent, chip) < AA:
+        urgent = lift(hsl(0.98, 0.80, 0.62), chip, AA)
+
+    second = lift(max((c for c in cols[1:7] if c is not accent_src),
+                      key=chroma, default=accent_src), chip, AA_STRONG)
+
+    return {
+        "bg_color": bg,
+        "fg_color": fg,
+        "tray_color": chip,
+        "accent_color": accent,
+        "highlight_color": highlight,
+        "invert_color": bg,
+        "caution_color": caution,
+        "urgent_color": urgent,
+        "middle_color": highlight,
+        "first_right_color": accent,
+        "middle_right_color": second,
+        "last_right_color": highlight,
+        "funny_pastel_color": second,
+    }
+
+
+def main():
+    if ENABLED_FLAG.exists() and ENABLED_FLAG.read_text().strip() == "0":
+        return 0  # user turned theme-following off
+
+    if len(sys.argv) > 1:
+        image = Path(sys.argv[1])
+    elif STATE_FILE.exists():
+        image = Path(STATE_FILE.read_text().strip())
+    else:
+        print("no wallpaper to theme from", file=sys.stderr)
+        return 1
+
+    if not image.exists():
+        print(f"not found: {image}", file=sys.stderr)
+        return 1
+
+    used_matugen = run_matugen(image)
+
+    try:
+        if used_matugen and MATUGEN_JSON.exists():
+            palette = build_from_matugen()
+            source = "matugen (Material You)"
+        else:
+            palette = build(image)
+            source = "wallust"
+    except Exception as exc:
+        try:
+            palette = build(image)
+            source = "wallust (matugen path failed: %s)" % exc
+        except Exception as exc2:
+            print(f"palette generation failed ({exc2}); leaving theme untouched",
+                  file=sys.stderr)
+            return 1
+
+    chip = palette["tray_color"]
+    lines = [
+        "/* Generated by theme-from-wallpaper — do not edit by hand.",
+        f"   Source: {image}  ({source})",
+        f"   Restore the static violet theme with:  cp {STATIC} {TARGET}  */",
+        "",
+    ]
+    for name, rgb in palette.items():
+        lines.append(f"@define-color {name} {rgb_to_hex(rgb)};")
+
+    lines.append("")
+    lines.append("/* contrast against the chip surface:")
+    for name in ("fg_color", "accent_color", "highlight_color", "caution_color",
+                 "urgent_color", "middle_right_color"):
+        lines.append(f"   {name}: {contrast(palette[name], chip):.2f}")
+    lines.append("*/")
+
+    TARGET.write_text("\n".join(lines) + "\n")
+    subprocess.run(["pkill", "-SIGUSR2", "-x", "waybar"], check=False)
+
+    # Vesktop "Glass": render the template with the wallpaper palette.
+    if VESKTOP_TEMPLATE.exists() and VESKTOP_THEME.parent.is_dir():
+        def rgba(rgb, a):
+            r, g, b = (round(max(0, min(1, c)) * 255) for c in rgb)
+            return f"rgba({r}, {g}, {b}, {a})"
+
+        accent = palette["accent_color"]
+        base = palette["bg_color"]
+        surface = palette["tray_color"]
+
+        # Text is checked against the *densest* glass it will sit on, so it
+        # stays readable no matter how bright the wallpaper is.
+        glass_ref = tuple(b * 0.45 + s_ * 0.55 for b, s_ in zip(base, surface))
+        text = lift(palette["fg_color"], glass_ref, 7.0)
+        muted = shade(text, -0.22)
+        if contrast(muted, glass_ref) < 4.5:
+            muted = lift(muted, glass_ref, 4.5)
+
+        subs = {
+            "{{WALLPAPER}}":   image.name,
+            "{{ACCENT}}":      rgb_to_hex(accent),
+            "{{ACCENT_SOFT}}": rgb_to_hex(shade(accent, 0.14)),
+            "{{ACCENT_DIM}}":  rgb_to_hex(shade(accent, -0.16)),
+            "{{BASE}}":        rgb_to_hex(base),
+            "{{SURFACE}}":     rgb_to_hex(surface),
+            "{{TEXT}}":        rgb_to_hex(text),
+            "{{TEXT_MUTED}}":  rgb_to_hex(muted),
+            "{{GLASS_1}}":     rgba(base, 0.46),
+            "{{GLASS_2}}":     rgba(surface, 0.38),
+            "{{GLASS_3}}":     rgba(base, 0.82),
+            "{{BORDER}}":      rgba(accent, 0.22),
+            "{{GLOW}}":        rgba(accent, 0.14),
+        }
+        css = VESKTOP_TEMPLATE.read_text()
+        for k, v in subs.items():
+            css = css.replace(k, v)
+        VESKTOP_THEME.write_text(css)
+
+    print(f"themed from {image.name} via {source}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+"""Small Adwaita settings panel for the wallpaper rotation."""
+
+import os
+import subprocess
+from pathlib import Path
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
+
+HOME = Path.home()
+FETCHER = HOME / ".local/bin/konachan-wallpaper"
+STATE_FILE = HOME / ".local/state/quickshell/user/generated/wallpaper/path.txt"
+LOCAL_DIR = HOME / ".local/share/wallpapers"
+TIMER = "konachan-wallpaper.timer"
+THEMER = HOME / ".local/bin/theme-from-wallpaper"
+THEME_FLAG = HOME / ".local/state/dots-niri/theme-follows-wallpaper"
+STILL_EXT = {".jpg", ".jpeg", ".png", ".gif"}
+
+
+def current_wallpaper():
+    try:
+        out = subprocess.run(["awww", "query"], capture_output=True, text=True, timeout=5).stdout
+        for line in out.splitlines():
+            if "image:" in line:
+                return line.split("image:", 1)[1].strip()
+    except Exception:
+        pass
+    if STATE_FILE.exists():
+        return STATE_FILE.read_text().strip()
+    return None
+
+
+def theme_follows():
+    if THEME_FLAG.exists():
+        return THEME_FLAG.read_text().strip() != "0"
+    return True
+
+
+def timer_active():
+    r = subprocess.run(["systemctl", "--user", "is-enabled", TIMER],
+                       capture_output=True, text=True)
+    return r.stdout.strip() == "enabled"
+
+
+def timer_interval():
+    r = subprocess.run(["systemctl", "--user", "show", TIMER,
+                        "-p", "TimersMonotonic"], capture_output=True, text=True)
+    # e.g. "TimersMonotonic={ OnUnitActiveUSec=45min ; ... }"
+    text = r.stdout
+    if "OnUnitActiveUSec=" in text:
+        raw = text.split("OnUnitActiveUSec=", 1)[1].split()[0].strip(";{} ")
+        for unit, mult in (("min", 1), ("h", 60), ("s", 1 / 60)):
+            if raw.endswith(unit):
+                try:
+                    return int(float(raw[: -len(unit)]) * mult)
+                except ValueError:
+                    pass
+    return 45
+
+
+class Window(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Wallpaper", default_width=520,
+                         default_height=640)
+        self.busy = False
+        # Widgets emit notify:: while being built; ignore until the UI settles.
+        self._loading = True
+
+        toolbar = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        toolbar.add_top_bar(header)
+
+        self.toasts = Adw.ToastOverlay()
+        page = Adw.PreferencesPage()
+
+        # --- preview -------------------------------------------------------
+        self.preview = Gtk.Picture(content_fit=Gtk.ContentFit.COVER,
+                                   height_request=200)
+        self.preview.add_css_class("card")
+        frame = Adw.PreferencesGroup()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.append(self.preview)
+        self.path_label = Gtk.Label(wrap=True, selectable=True, xalign=0)
+        self.path_label.add_css_class("dim-label")
+        self.path_label.add_css_class("caption")
+        box.append(self.path_label)
+        frame.add(box)
+        page.add(frame)
+
+        # --- actions -------------------------------------------------------
+        actions = Adw.PreferencesGroup(title="Wallpaper")
+
+        self.pull_row = Adw.ActionRow(
+            title="Pull random wallpaper",
+            subtitle="Fetch a new safe landscape image from Konachan")
+        self.pull_btn = Gtk.Button(label="Pull", valign=Gtk.Align.CENTER)
+        self.pull_btn.add_css_class("suggested-action")
+        self.pull_btn.connect("clicked", self.on_pull)
+        self.spinner = Gtk.Spinner()
+        bbox = Gtk.Box(spacing=6)
+        bbox.append(self.spinner)
+        bbox.append(self.pull_btn)
+        self.pull_row.add_suffix(bbox)
+        actions.add(self.pull_row)
+
+        local_row = Adw.ActionRow(title="Set from local collection",
+                                  subtitle=str(LOCAL_DIR))
+        pick = Gtk.Button(label="Choose…", valign=Gtk.Align.CENTER)
+        pick.connect("clicked", self.on_pick_local)
+        local_row.add_suffix(pick)
+        actions.add(local_row)
+        page.add(actions)
+
+        # --- rotation ------------------------------------------------------
+        rot = Adw.PreferencesGroup(title="Automatic rotation")
+
+        self.switch_row = Adw.SwitchRow(
+            title="Rotate automatically",
+            subtitle="systemd --user timer")
+        self.switch_row.set_active(timer_active())
+        self.switch_row.connect("notify::active", self.on_toggle_timer)
+        rot.add(self.switch_row)
+
+        self.interval_row = Adw.SpinRow.new_with_range(5, 720, 5)
+        self.interval_row.set_title("Interval")
+        self.interval_row.set_subtitle("Minutes between wallpapers")
+        self.interval_row.set_value(timer_interval())
+        self.interval_row.connect("notify::value", self.on_interval_changed)
+        rot.add(self.interval_row)
+
+        self.theme_row = Adw.SwitchRow(
+            title="Match bar theme to wallpaper",
+            subtitle="Recolour waybar from each new wallpaper")
+        self.theme_row.set_active(theme_follows())
+        self.theme_row.connect("notify::active", self.on_toggle_theme)
+        rot.add(self.theme_row)
+        page.add(rot)
+
+        self.toasts.set_child(page)
+        toolbar.set_content(self.toasts)
+        self.set_content(toolbar)
+
+        self.refresh()
+        self._loading = False
+
+    # ----------------------------------------------------------------------
+    def refresh(self):
+        path = current_wallpaper()
+        if path and Path(path).exists():
+            self.preview.set_filename(path)
+            self.path_label.set_text(path)
+        else:
+            self.path_label.set_text("No wallpaper set")
+
+    def toast(self, msg):
+        self.toasts.add_toast(Adw.Toast(title=msg))
+
+    def set_busy(self, busy):
+        self.busy = busy
+        self.pull_btn.set_sensitive(not busy)
+        if busy:
+            self.spinner.start()
+        else:
+            self.spinner.stop()
+
+    # ----------------------------------------------------------------------
+    def on_pull(self, _btn):
+        if self.busy:
+            return
+        self.set_busy(True)
+        try:
+            proc = Gio.Subprocess.new(
+                [str(FETCHER)],
+                Gio.SubprocessFlags.STDERR_PIPE | Gio.SubprocessFlags.STDOUT_SILENCE)
+        except GLib.Error as exc:
+            self.set_busy(False)
+            self.toast(f"Failed to launch: {exc.message}")
+            return
+        proc.communicate_utf8_async(None, None, self._pull_done)
+
+    def _pull_done(self, proc, result):
+        self.set_busy(False)
+        try:
+            _, _, err = proc.communicate_utf8_finish(result)
+        except GLib.Error as exc:
+            self.toast(f"Error: {exc.message}")
+            return
+        if proc.get_successful():
+            self.refresh()
+            self.toast("New wallpaper set")
+        else:
+            last = (err or "").strip().splitlines()
+            self.toast(last[-1] if last else "Fetch failed")
+
+    def on_pick_local(self, _btn):
+        dialog = Gtk.FileDialog(title="Choose a wallpaper")
+        if LOCAL_DIR.is_dir():
+            dialog.set_initial_folder(Gio.File.new_for_path(str(LOCAL_DIR)))
+        dialog.open(self, None, self._picked)
+
+    def _picked(self, dialog, result):
+        try:
+            gfile = dialog.open_finish(result)
+        except GLib.Error:
+            return
+        if not gfile:
+            return
+        path = gfile.get_path()
+        if Path(path).suffix.lower() not in STILL_EXT:
+            self.toast("Only still images are supported here")
+            return
+        subprocess.run(["awww", "img", "--filter", "Lanczos3", "--resize", "crop",
+                        "--transition-duration", "1", "--transition-type", "center",
+                        path], check=False)
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text(f"{path}\n")
+        (HOME / ".cache/wallpaper").write_text(path)
+        subprocess.run([str(THEMER), path], check=False)
+        self.refresh()
+        self.toast("Wallpaper set")
+
+    # ----------------------------------------------------------------------
+    def on_toggle_timer(self, row, _param):
+        if self._loading:
+            return
+        action = "enable" if row.get_active() else "disable"
+        args = ["systemctl", "--user", action, TIMER]
+        if row.get_active():
+            args.append("--now")
+        r = subprocess.run(args, capture_output=True, text=True)
+        self.toast(f"Rotation {'on' if row.get_active() else 'off'}"
+                   if r.returncode == 0 else "Failed to change timer")
+
+    def on_toggle_theme(self, row, _param):
+        if self._loading:
+            return
+        THEME_FLAG.parent.mkdir(parents=True, exist_ok=True)
+        THEME_FLAG.write_text("1" if row.get_active() else "0")
+        if row.get_active():
+            subprocess.run([str(THEMER)], check=False)
+            self.toast("Bar recoloured from wallpaper")
+        else:
+            self.toast("Bar theme pinned")
+
+    def on_interval_changed(self, row, _param):
+        if self._loading:
+            return
+        minutes = int(row.get_value())
+        unit = HOME / ".config/systemd/user/konachan-wallpaper.timer"
+        if not unit.exists():
+            return
+        text = unit.read_text()
+        new = []
+        for line in text.splitlines():
+            if line.startswith("OnUnitActiveSec="):
+                line = f"OnUnitActiveSec={minutes}min"
+            elif line.startswith("Description=Rotate Konachan wallpaper"):
+                line = f"Description=Rotate Konachan wallpaper every {minutes} minutes"
+            new.append(line)
+        unit.write_text("\n".join(new) + "\n")
+        subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
+        if timer_active():
+            subprocess.run(["systemctl", "--user", "restart", TIMER], check=False)
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id="dev.monika.WallpaperSettings")
+
+    def do_activate(self):
+        win = self.props.active_window or Window(self)
+        win.present()
+
+
+if __name__ == "__main__":
+    App().run(None)
