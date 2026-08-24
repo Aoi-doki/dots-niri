@@ -2,7 +2,7 @@
 Type=Application
 Name=Wallpaper
 Comment=Pull a random wallpaper and manage rotation
-Exec=wallpaper-settings
+Exec=sh -c "exec \\"\\$HOME/.local/bin/wallpaper-settings\\""
 Icon=preferences-desktop-wallpaper
 Terminal=false
 Categories=Settings;DesktopSettings;
